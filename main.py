@@ -2,8 +2,10 @@ import requests
 import json
 import subprocess
 import time
+import sys
 
-SLEEPING_TIME = 10
+SLEEPING_TIME = 40
+WAITING_TIME_INTERFACES = 5
 
 def check_network():
   bashCmd = ["iwgetid", "-r"]
@@ -13,26 +15,32 @@ def check_network():
     return 1
   return 0
 
+
 def change_mac():
   bashCmd = ["ifconfig", "wlan0", "down"]
   process = subprocess.Popen(bashCmd, stdout=subprocess.PIPE)
   output, error = process.communicate()
+  print(output.decode("utf-8"))
+  time.sleep(WAITING_TIME_INTERFACES)
 
 
   bashCmd = ["macchanger", "-r", "wlan0"]
   process = subprocess.Popen(bashCmd, stdout=subprocess.PIPE)
   output, error = process.communicate()
+  print(output.decode("utf-8"))
+  time.sleep(WAITING_TIME_INTERFACES)
 
 
 
   ashCmd = ["ifconfig", "wlan0", "up"]
   process = subprocess.Popen(bashCmd, stdout=subprocess.PIPE)
   output, error = process.communicate()
+  time.sleep(WAITING_TIME_INTERFACES)
   print(output.decode("utf-8"))
 
-  print("Waiting " + str(SLEEPING_TIME) + "seconds for reconnection to hotspot.")
+  print("Waiting " + str(SLEEPING_TIME) + " seconds for reconnection to hotspot.")
   print("Make sure reconnection is enabled")
-  time.sleep(10)
+  time.sleep(SLEEPING_TIME)
 
   return_code = check_network()
   if return_code == 1:
@@ -65,12 +73,9 @@ def connection_status():
 
     print("Internet connection remaining: " + str(lasting_percentage).split(".")[0] +  "%")
 
-    if lasting_percentage > 20:
+    if lasting_percentage > 80:
       exit(2)
-
-    print("Resetting your connection")
-    print("Changing your MAC")
-    change_mac()
+    exit(28)
 
 
   except KeyError:
