@@ -1,5 +1,36 @@
 #!/bin/bash
 
+find_wifi (){
+	echo "Scanning wifi networks..."
+	WIFI_WORKING=("_SNCF gare-gratuit" "_SNCF_WIFI_INOUI")
+	len_WIFI_WORKING="${#WIFI_WORKING[@]}"
+	wifi_network=$(nmcli -t --fields ssid dev wifi | sort | uniq | grep -v '^[[:space:]]*$' > a)
+
+	state=false #target hotspot found
+
+	while read line; do 
+		for (( i = 0; i < $len_WIFI_WORKING; i++ )); do
+			if [[ $line == "${WIFI_WORKING[i]}" ]]; then
+				state=true
+				echo "Hotspot" $line "has been detected";
+				break
+			fi
+		done
+		if [[ $state  ]]; then
+			break
+		fi
+	done < a
+
+	rm a
+	if [[ !$state ]]; then
+		echo "No target hotspot found"
+		exit 12
+	fi
+};
+
+find_wifi
+exit 0
+
 python3 main.py
 
 return_code=$?
