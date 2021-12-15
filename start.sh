@@ -1,8 +1,11 @@
 #!/bin/bash
+WIFI_WORKING=("_SNCF gare-gratuit" "_SNCF_WIFI_INOUI" "eduroam")
+extention=".conf"
+begin_wpa_launch="wpa_supplicant -iwlan0 -c"
+end_wpa_launch=" > /dev/null 2>&1 &"
 
 find_wifi (){
 	echo "Scanning wifi networks..."
-	WIFI_WORKING=("_SNCF gare-gratuit" "_SNCF_WIFI_INOUI")
 	len_WIFI_WORKING="${#WIFI_WORKING[@]}"
 	wifi_network=$(nmcli -t --fields ssid dev wifi | sort | uniq | grep -v '^[[:space:]]*$' > a)
 
@@ -13,6 +16,7 @@ find_wifi (){
 			if [[ $line == "${WIFI_WORKING[i]}" ]]; then
 				state=true
 				echo "Hotspot" $line "has been detected";
+				return $i
 				break
 			fi
 		done
@@ -29,16 +33,20 @@ find_wifi (){
 };
 
 find_wifi
-exit 0
+res=$?
+wifi_network="${WIFI_WORKING[$res]}"
 
-python3 main.py
+python3 main.py $wifi_network
 
 return_code=$?
 
+wifi_network="_SNCF_WIFI_INOUI"
+conf_file="$wifi_network$extention"
+wpa_cmd="$begin_wpa_launch$conf_file$end_wpa_launch"
 
 if [[ $return_code -eq 28 ]]; then
 	echo "Turning off NetworkManager"
-	service NetworkManager stop
+	service NetworkManager stop 2>/dev/null
 
 	sleep 2
 
@@ -62,7 +70,7 @@ if [[ $return_code -eq 28 ]]; then
 elif [[ $return_code -eq 1 ]]; then
 	echo "You are not connected to an open network, connecting"
 	echo "Turning off NetworkManager"
-	service NetworkManager stop
+	service NetworkManager stop 2>/dev/null
 
 	sleep 2
 
@@ -77,7 +85,7 @@ elif [[ $return_code -eq 1 ]]; then
 	sudo ifconfig wlan0 up
 
 	echo "Connection to Wifi hotspot..."
-	wpa_supplicant -iwlan0 -cwpa.conf 2>/dev/null &
+	wpa_supplicant $wpa_cmd
 
 	echo "Getting an IP address"
 	sudo dhclient wlan0

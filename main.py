@@ -128,8 +128,10 @@ def connect():
 
 
 if __name__ == '__main__':
-  return_code = check_network()
-  if return_code == 1:
-    exit(1)
-  connection_status()
-  connect()
+  print(sys.argv)
+  if sys.argv[1] == '_SNCF_WIFI_INOUI':
+    return_code = check_network()
+    if return_code == 1:
+      exit(1)
+    connection_status()
+    connect()
